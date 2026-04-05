@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indian Stock Analyser</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g-fill:#EAF3DE;--g-text:#27500A;--g-border:#C0DD97;--g-accent:#639922;
+  --a-fill:#FAEEDA;--a-text:#854F0B;--a-border:#FAC775;--a-accent:#EF9F27;
+  --r-fill:#FCEBEB;--r-text:#A32D2D;--r-border:#F7C1C1;--r-accent:#E24B4A;
+  --b-fill:#E6F1FB;--b-text:#185FA5;--b-border:#B5D4F4;--b-accent:#378ADD;
+  --n-fill:#F1EFE8;--n-text:#444441;--n-border:#D3D1C7;
+  --bg:#f7f7f5;--surface:#ffffff;--border:rgba(0,0,0,0.1);
+  --text:#1a1a1a;--muted:#777;--radius:12px
+}
+@media(prefers-color-scheme:dark){:root{
+  --g-fill:#173404;--g-text:#C0DD97;--g-border:#3B6D11;--g-accent:#97C459;
+  --a-fill:#412402;--a-text:#FAC775;--a-border:#854F0B;--a-accent:#EF9F27;
+  --r-fill:#501313;--r-text:#F09595;--r-border:#A32D2D;--r-accent:#E24B4A;
+  --b-fill:#042C53;--b-text:#85B7EB;--b-border:#185FA5;--b-accent:#378ADD;
+  --n-fill:#2C2C2A;--n-text:#D3D1C7;--n-border:#5F5E5A;
+  --bg:#111213;--surface:#1c1d1f;--border:rgba(255,255,255,0.09);
+  --text:#e8e8e6;--muted:#888
+}}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.6}
+
+/* ══ SCREENS ══ */
+.screen{display:none}
+.screen.active{display:block}
+
+/* ══ HOME ══ */
+#homeScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+.brand{text-align:center;margin-bottom:36px}
+.brand-title{font-size:26px;font-weight:600;letter-spacing:-0.3px;color:var(--text)}
+.brand-title span{color:var(--g-accent)}
+.brand-sub{font-size:13px;color:var(--muted);margin-top:4px}
+
+.form-card{background:var(--surface);border:0.5px solid var(--border);border-radius:16px;padding:28px 30px;width:100%;max-width:480px}
+
+.key-notice{background:var(--b-fill);border:0.5px solid var(--b-border);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--b-text);margin-bottom:20px;line-height:1.5}
+.key-notice strong{font-weight:500}
+.key-notice a{color:var(--b-accent);text-decoration:none}
+.key-notice a:hover{text-decoration:underline}
+
+.field-label{display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:7px;margin-top:18px}
+.field-label:first-of-type{margin-top:0}
+
+input[type=text],input[type=password]{width:100%;padding:11px 13px;border:0.5px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+input[type=text]:focus,input[type=password]:focus{border-color:var(--g-accent);box-shadow:0 0 0 3px rgba(99,153,34,0.12)}
+
+.hz-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.hz-btn{padding:7px 16px;border-radius:100px;border:0.5px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.hz-btn:hover,.hz-btn.sel{border-color:var(--g-accent);background:var(--g-fill);color:var(--g-text)}
+.hz-btn.sel{font-weight:500}
+
+.go-btn{width:100%;margin-top:22px;padding:13px;border:none;border-radius:10px;background:var(--g-accent);color:#fff;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;letter-spacing:0.2px;transition:opacity .15s}
+.go-btn:hover{opacity:.88}
+.go-btn:disabled{opacity:.45;cursor:not-allowed}
+
+.chips-label{font-size:12px;color:var(--muted);text-align:center;margin-top:22px}
+.chip-row{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:9px}
+.chip{padding:5px 13px;border-radius:100px;border:0.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
+.chip:hover{border-color:var(--g-accent);color:var(--g-text);background:var(--g-fill)}
+
+/* ══ LOADING ══ */
+#loadScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+.spin{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--g-accent);border-radius:50%;animation:spin .75s linear infinite;margin-bottom:22px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-title{font-size:20px;font-weight:500;margin-bottom:8px}
+.load-stock{color:var(--g-accent)}
+.load-steps{margin-top:16px;text-align:left;display:inline-block}
+.step{font-size:13px;color:var(--muted);padding:4px 0;opacity:.35;transition:opacity .4s}
+.step.active{opacity:1;color:var(--g-accent)}
+.step.done{opacity:.55;color:var(--text)}
+.step.done::before{content:"✓ "}
+.step.active::before{content:"→ "}
+.step::before{content:"  "}
+
+/* ══ REPORT ══ */
+#reportScreen{padding:20px;max-width:920px;margin:0 auto}
+.report-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px}
+.back-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:100px;border:0.5px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.back-btn:hover{border-color:var(--text);color:var(--text)}
+.report-badge{font-size:12px;color:var(--muted);background:var(--surface);border:0.5px solid var(--border);padding:6px 14px;border-radius:100px}
+.report-body{background:var(--surface);border:0.5px solid var(--border);border-radius:16px;padding:24px}
+
+/* ══ REPORT INTERNALS ══ */
+.conf{padding:10px 16px;border-radius:8px;margin-bottom:14px;font-size:12px}
+.conf.high,.conf.moderate{background:var(--g-fill);color:var(--g-text)}
+.conf.low{background:var(--a-fill);color:var(--a-text)}
+.conf.vlow{background:var(--r-fill);color:var(--r-text)}
+.tab-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.tab-btn{padding:7px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.tab-btn:hover{border-color:var(--text);color:var(--text)}
+.tab-btn.active{border:1.5px solid var(--text);color:var(--text);font-weight:500}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px}
+.card.green{background:var(--g-fill);border-color:var(--g-border)}
+.card.amber{background:var(--a-fill);border-color:var(--a-border)}
+.card.red{background:var(--r-fill);border-color:var(--r-border)}
+.card.blue{background:var(--b-fill);border-color:var(--b-border)}
+.card.grey{background:var(--n-fill);border-color:var(--n-border)}
+.view-label{font-size:18px;font-weight:500;margin-bottom:6px}
+.view-label.green{color:var(--g-text)}.view-label.amber{color:var(--a-text)}.view-label.red{color:var(--r-text)}
+.view-reason{font-size:13px;margin-bottom:16px}
+.sec-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:14px 0 8px}
+.bullet-row{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.bullet-row:last-child{border-bottom:none}
+.bicon{font-size:14px;min-width:18px;margin-top:1px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+th{text-align:left;padding:7px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.7px;color:var(--muted);border-bottom:0.5px solid var(--border)}
+td{padding:9px 10px;color:var(--text);border-bottom:0.5px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.pos{color:var(--g-accent);font-weight:500}.neg{color:var(--r-accent);font-weight:500}
+.badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:500}
+.badge.ok{background:var(--g-fill);color:var(--g-text)}
+.badge.warn{background:var(--a-fill);color:var(--a-text)}
+.badge.bad{background:var(--r-fill);color:var(--r-text)}
+.badge.info{background:var(--b-fill);color:var(--b-text)}
+.badge.neu{background:var(--n-fill);color:var(--n-text)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin:12px 0}
+.mc{background:var(--bg);border-radius:8px;padding:12px 14px}
+.mc .ml{font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:4px}
+.mc .mv{font-size:18px;font-weight:500;color:var(--text)}
+.mc .ms{font-size:11px;color:var(--muted);margin-top:2px}
+.info-row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:0.5px solid var(--border);gap:16px}
+.info-row:last-child{border-bottom:none}
+.il{font-size:12px;color:var(--muted)}
+.iv{font-size:12px;color:var(--text);font-weight:500;text-align:right}
+.score-box{background:var(--bg);border-radius:8px;padding:14px 16px;margin-top:14px;font-size:12px;color:var(--muted)}
+.eps-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.eps-chip{background:var(--bg);border-radius:8px;padding:10px 14px;text-align:center;min-width:88px}
+.eps-q{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+.eps-v{font-size:15px;font-weight:500;color:var(--text);margin:3px 0}
+.eps-y{font-size:11px}
+.peer-you{background:var(--bg)}
+.flag-card{border-left:3px solid var(--a-accent);background:var(--a-fill);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:8px}
+.flag-title{font-size:13px;font-weight:500;color:var(--a-text);margin-bottom:3px}
+.flag-note{font-size:12px;color:var(--a-text)}
+.disc{font-size:11px;color:var(--muted);border-top:0.5px solid var(--border);padding-top:14px;margin-top:24px;line-height:1.6}
+details summary{font-size:12px;color:var(--muted);cursor:pointer;padding:8px 0;user-select:none}
+details p{font-size:12px;color:var(--muted);padding:5px 0;border-bottom:0.5px solid var(--border)}
+details p:last-child{border-bottom:none}
+details strong{color:var(--text);font-weight:500}
+
+/* ══ ERROR ══ */
+.err-card{background:var(--r-fill);border:0.5px solid var(--r-border);border-radius:12px;padding:24px;text-align:center;color:var(--r-text)}
+.err-card strong{display:block;font-size:16px;margin-bottom:8px}
+.err-card p{font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HOME SCREEN ══════════════ -->
+<div id="homeScreen" class="screen active">
+  <div class="brand">
+    <div class="brand-title">Indian Stock <span>Analyser</span></div>
+    <div class="brand-sub">Fundamental analysis for long-term investors · Powered by Claude AI + live web search</div>
+  </div>
+
+  <div class="form-card">
+    <div class="key-notice">
+      <strong>Your Anthropic API key is required</strong> — it's used only to run the analysis and never stored.<br>
+      Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+    </div>
+
+    <label class="field-label">Anthropic API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off" />
+
+    <label class="field-label">Stock name or NSE ticker</label>
+    <input type="text" id="stockInput" placeholder="e.g. TCS · RELIANCE · HDFCBANK · Infosys" autocomplete="off" />
+
+    <label class="field-label">Investment horizon</label>
+    <div class="hz-row">
+      <button class="hz-btn" onclick="setHz(this,'3 Years')">3 Years</button>
+      <button class="hz-btn sel" onclick="setHz(this,'5 Years')">5 Years</button>
+      <button class="hz-btn" onclick="setHz(this,'10 Years')">10 Years</button>
+      <button class="hz-btn" onclick="setHz(this,'15 Years')">15 Years</button>
+    </div>
+
+    <button class="go-btn" id="goBtn" onclick="startAnalysis()">Analyse Stock →</button>
+  </div>
+
+  <div class="chips-label">Quick picks</div>
+  <div class="chip-row">
+    <span class="chip" onclick="pick('TCS')">TCS</span>
+    <span class="chip" onclick="pick('RELIANCE')">Reliance</span>
+    <span class="chip" onclick="pick('HDFCBANK')">HDFC Bank</span>
+    <span class="chip" onclick="pick('INFY')">Infosys</span>
+    <span class="chip" onclick="pick('WIPRO')">Wipro</span>
+    <span class="chip" onclick="pick('BAJFINANCE')">Bajaj Finance</span>
+    <span class="chip" onclick="pick('ICICIBANK')">ICICI Bank</span>
+    <span class="chip" onclick="pick('TATAMOTORS')">Tata Motors</span>
+    <span class="chip" onclick="pick('AXISBANK')">Axis Bank</span>
+    <span class="chip" onclick="pick('SBIN')">SBI</span>
+  </div>
+</div>
+
+<!-- ══════════════ LOADING SCREEN ══════════════ -->
+<div id="loadScreen" class="screen">
+  <div class="spin"></div>
+  <div class="load-title">Analysing <span class="load-stock" id="loadStockName"></span></div>
+  <div class="load-steps">
+    <div class="step" id="st0">Fetching live price &amp; market data</div>
+    <div class="step" id="st1">Pulling valuation metrics</div>
+    <div class="step" id="st2">Calculating 3Y &amp; 5Y growth trends</div>
+    <div class="step" id="st3">Checking balance sheet health</div>
+    <div class="step" id="st4">Reviewing ownership &amp; earnings calls</div>
+    <div class="step" id="st5">Comparing with sector peers</div>
+    <div class="step" id="st6">Building your report</div>
+  </div>
+</div>
+
+<!-- ══════════════ REPORT SCREEN ══════════════ -->
+<div id="reportScreen" class="screen">
+  <div class="report-topbar">
+    <button class="back-btn" onclick="goHome()">← Analyse another stock</button>
+    <div class="report-badge" id="reportBadge"></div>
+  </div>
+  <div class="report-body" id="reportBody"></div>
+</div>
+
+<script>
+var selectedHz = '5 Years';
+
+// ── restore saved key ──────────────────────────────────────────────
+window.addEventListener('load', function() {
+  var saved = localStorage.getItem('isa_key');
+  if (saved) document.getElementById('apiKey').value = saved;
+  var savedStock = localStorage.getItem('isa_last_stock');
+  if (savedStock) document.getElementById('stockInput').value = savedStock;
+});
+
+function setHz(btn, v) {
+  selectedHz = v;
+  document.querySelectorAll('.hz-btn').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+}
+
+function pick(s) {
+  document.getElementById('stockInput').value = s;
+  document.getElementById('stockInput').focus();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() {
+  showScreen('homeScreen');
+}
+
+// ── step animation ──────────────────────────────────────────────────
+var stepIdx = 0, stepTimer = null;
+function startSteps() {
+  stepIdx = 0;
+  document.querySelectorAll('.step').forEach(function(s){ s.className = 'step'; });
+  function tick() {
+    if (stepIdx > 0) { var prev = document.getElementById('st'+(stepIdx-1)); if(prev) prev.className='step done'; }
+    var cur = document.getElementById('st'+stepIdx);
+    if (cur) { cur.className='step active'; stepIdx++; }
+  }
+  tick();
+  stepTimer = setInterval(function(){ if(stepIdx < 7) tick(); }, 2000);
+}
+function stopSteps() {
+  clearInterval(stepTimer);
+  document.querySelectorAll('.step').forEach(function(s){ s.className='step done'; });
+}
+
+// ── main analysis ───────────────────────────────────────────────────
+async function startAnalysis() {
+  var apiKey = document.getElementById('apiKey').value.trim();
+  var stock = document.getElementById('stockInput').value.trim();
+  if (!apiKey) { alert('Please enter your Anthropic API key.'); document.getElementById('apiKey').focus(); return; }
+  if (!stock) { alert('Please enter a stock name or ticker.'); document.getElementById('stockInput').focus(); return; }
+
+  // Save for convenience
+  localStorage.setItem('isa_key', apiKey);
+  localStorage.setItem('isa_last_stock', stock);
+
+  document.getElementById('loadStockName').textContent = stock.toUpperCase();
+  showScreen('loadScreen');
+  startSteps();
+
+  try {
+    var resp = await fetch('/api/analyse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stock: stock, horizon: selectedHz, apiKey: apiKey })
+    });
+
+    var data = await resp.json();
+    stopSteps();
+
+    if (!resp.ok || data.error) {
+      throw new Error(data.error || 'Server error ' + resp.status);
+    }
+
+    document.getElementById('reportBadge').textContent =
+      stock.toUpperCase() + ' · ' + selectedHz + ' · ' +
+      new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+
+    var body = document.getElementById('reportBody');
+    body.innerHTML = data.html;
+
+    // Re-execute any <script> tags in the injected HTML
+    body.querySelectorAll('script').forEach(function(s) {
+      var ns = document.createElement('script');
+      ns.textContent = s.textContent;
+      s.parentNode.replaceChild(ns, s);
+    });
+
+    showScreen('reportScreen');
+    window.scrollTo(0, 0);
+
+  } catch(err) {
+    stopSteps();
+    document.getElementById('reportBody').innerHTML =
+      '<div class="err-card"><strong>Analysis failed</strong><p>' + (err.message || 'Unknown error. Please try again.') + '</p></div>';
+    showScreen('reportScreen');
+  }
+}
+
+// Enter key on inputs
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('homeScreen').classList.contains('active')) {
+    startAnalysis();
+  }
+});
+</script>
+</body>
+</html>
